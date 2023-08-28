@@ -4,6 +4,7 @@
     "jsonresponsefrommodle",
     "jsonresponsenomodel",
     "jsonresponsenomodule",
+    "newreservation",
     "viewsets"
   ]
 }
