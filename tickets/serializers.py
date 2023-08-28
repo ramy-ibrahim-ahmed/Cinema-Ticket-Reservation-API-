@@ -19,3 +19,10 @@ class GuestSerializer(serializers.ModelSerializer):
         model = Guest
         # serialize data by wrong way the right ways is (uuid, slug)
         fields = ["pk", "reservation", "name", "mobile", "email"]
+
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        # serialize data by wrong way the right ways is (uuid, slug)
+        fields = "__all__"

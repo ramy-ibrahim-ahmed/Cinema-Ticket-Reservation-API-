@@ -1,13 +1,20 @@
 from django.shortcuts import render
 from django.http.response import JsonResponse
 from .models import *
-from rest_framework.decorators import api_view
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 from .serializers import *
 from rest_framework import status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import Http404
 from rest_framework import generics, mixins, viewsets
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .permissions import ISAuthorReadOnly
 
 
 # 1 without rest framework and no model query (FBV)
@@ -235,19 +242,29 @@ class mixins_pk(
 
 # 6 Generics
 # 6.1 GET & POST
+# add authentication and permission
+# @authentication_classes([BasicAuthentication])
+# @permission_classes([IsAuthenticated])
 class generics_list(generics.ListCreateAPIView):
     # queryset to get data
     queryset = Guest.objects.all()
     # using serializer class
     serializer_class = GuestSerializer
+    # token authentication
+    authentication_classes = [TokenAuthentication]
 
 
-# 6.2 GET & PUT & DELETE
+# 6.2 GET & PUT & DELETE@authentication_classes([BasicAuthentication])
 class generics_pk(generics.RetrieveUpdateDestroyAPIView):
     # queryset to get data
     queryset = Guest.objects.all()
     # using serializer class
     serializer_class = GuestSerializer
+    # add authentication and permission
+    # authentication_classes = [BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
+    # add token
+    authentication_classes = [TokenAuthentication]
 
 
 # 7 viewsets
@@ -274,12 +291,12 @@ class viewsets_reservation(viewsets.ModelViewSet):
 
 
 # 8 find_movie
-@api_view(['GET'])
+@api_view(["GET"])
 def find_movie(request):
     # get data by queryset
     movies = Movie.objects.filter(
-        name = request.data['name'],
-        hall = request.data['hall'],
+        name=request.data["name"],
+        hall=request.data["hall"],
     )
     # serialize data
     serializer = MovieSerializer(movies, many=True)
@@ -291,25 +308,30 @@ def find_movie(request):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-#9 create_reservation
-@api_view(['POST'])
+# 9 create_reservation
+@api_view(["POST"])
 def new_reservation(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         # retrieve the movie by its hall
-        movie = Movie.objects.get(
-            hall = request.data['hall']
-        )
+        movie = Movie.objects.get(hall=request.data["hall"])
 
-        #create a guest by parameters
+        # create a guest by parameters
         guest = Guest()
-        guest.name = request.data['name']
-        guest.mobile = request.data['mobile']
-        guest.email = request.data['email']
+        guest.name = request.data["name"]
+        guest.mobile = request.data["mobile"]
+        guest.email = request.data["email"]
         guest.save()
 
-        #create reservation by parameters
+        # create reservation by parameters
         reservation = Reservation()
         reservation.guest = guest
         reservation.movie = movie
         reservation.save()
         return Response(status=status.HTTP_201_CREATED)
+
+
+# 10 post author
+class Post_pk(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [ISAuthorReadOnly]
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
